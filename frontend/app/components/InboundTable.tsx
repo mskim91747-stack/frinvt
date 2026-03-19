@@ -1,0 +1,81 @@
+"use client";
+
+import {
+  InboundData,
+  BRAND_ORDER,
+  MONTHS,
+  INVENTORY_HEADER_ROW_COLOR,
+  INVENTORY_TOTAL_ROW_COLOR,
+} from "../../lib/types";
+import { fmtAmt } from "../../lib/utils";
+import InboundBrandSection from "./InboundBrandSection";
+
+interface Props {
+  data: InboundData;
+  monthLabels?: Record<number, string>;
+}
+
+export default function InboundTable({ data, monthLabels = {} }: Props) {
+  const estimatedSet = new Set(Object.keys(monthLabels).map(Number));
+  const allAccounts = BRAND_ORDER.flatMap((b) => data.brands[b] ?? []);
+
+  const grandTotals: Record<number, number> = {};
+  MONTHS.forEach((m) => {
+    grandTotals[m] = allAccounts.reduce((s, a) => s + (a.months[m] ?? 0), 0);
+  });
+  const grandTotal = MONTHS.reduce((s, m) => s + (grandTotals[m] ?? 0), 0);
+
+  const thBase = `${INVENTORY_HEADER_ROW_COLOR} min-w-[92px] whitespace-nowrap border-b border-l border-white/40 px-3 py-4 text-center text-sm font-semibold text-slate-700 shadow-[inset_0_1px_0_rgba(255,255,255,0.5)]`;
+  const tdBase = `${INVENTORY_TOTAL_ROW_COLOR} whitespace-nowrap border-t border-l border-white/40 px-3 py-4 text-right text-sm font-bold text-slate-700 tabular-nums shadow-[inset_0_1px_0_rgba(255,255,255,0.5)]`;
+
+  return (
+    <div className="overflow-hidden rounded-[26px] border border-stone-200/80 bg-[linear-gradient(180deg,rgba(255,255,255,0.99)_0%,rgba(250,250,249,0.98)_100%)] shadow-[0_18px_45px_rgba(15,23,42,0.08)] ring-1 ring-stone-100">
+      <div className="overflow-x-auto">
+        <table className="min-w-full border-separate border-spacing-0 text-sm">
+          <thead>
+            <tr className={`${INVENTORY_HEADER_ROW_COLOR} text-slate-700`}>
+              <th className={`${INVENTORY_HEADER_ROW_COLOR} sticky left-0 z-20 min-w-[240px] whitespace-nowrap border-b border-white/40 px-6 py-4 text-left text-sm font-semibold backdrop-blur shadow-[inset_0_1px_0_rgba(255,255,255,0.5)]`}>
+                대리상 명칭
+              </th>
+              {MONTHS.map((m) => {
+                const label = monthLabels[m];
+                return (
+                  <th key={m} className={`${thBase}${label ? " italic" : ""}`}>
+                    {m}월{label && (
+                      <span className="ml-0.5 text-[10px] font-normal not-italic text-slate-500">({label})</span>
+                    )}
+                  </th>
+                );
+              })}
+              <th className={`${INVENTORY_HEADER_ROW_COLOR} min-w-[100px] whitespace-nowrap border-b border-l border-white/40 px-3 py-4 text-center text-sm font-semibold text-slate-700 shadow-[inset_0_1px_0_rgba(255,255,255,0.5)]`}>
+                합계
+              </th>
+            </tr>
+          </thead>
+
+          {BRAND_ORDER.map((brand) => (
+            <InboundBrandSection
+              key={brand}
+              brand={brand}
+              accounts={data.brands[brand] ?? []}
+              defaultOpen={false}
+              monthLabels={monthLabels}
+            />
+          ))}
+
+          <tfoot>
+            <tr className={`${INVENTORY_TOTAL_ROW_COLOR} text-slate-700`}>
+              <td className={`${INVENTORY_TOTAL_ROW_COLOR} sticky left-0 z-10 whitespace-nowrap border-t border-white/40 px-6 py-4 text-sm font-bold shadow-[inset_0_1px_0_rgba(255,255,255,0.5)]`}>
+                전체 합계
+              </td>
+              {MONTHS.map((m) => (
+                <td key={m} className={tdBase}>{fmtAmt(grandTotals[m])}</td>
+              ))}
+              <td className={tdBase}>{fmtAmt(grandTotal)}</td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    </div>
+  );
+}

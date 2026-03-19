@@ -1,0 +1,4 @@
+snowflake-connector-python
+pandas
+python-dotenv
+python-dateutil
